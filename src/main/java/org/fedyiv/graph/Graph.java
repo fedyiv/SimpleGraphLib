@@ -11,6 +11,6 @@ public interface Graph<T> {
     boolean containsVertex(T vertex);
     boolean containsEdge(T vertex1, T vertex2);
     int numberOfVertices();
-    int numberOfVerticesConnectedWithVertex(T vertex);
+    int numberOfOutgoingEdgesWithFromVertex(T vertex);
 
 }
