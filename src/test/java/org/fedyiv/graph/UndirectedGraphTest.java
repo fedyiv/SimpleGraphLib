@@ -99,8 +99,8 @@ class UndirectedGraphTest {
         assertTrue(graph.containsEdge(vertex1, vertex2));
         assertTrue(graph.containsEdge(vertex2, vertex1));
 
-        assertEquals(1, graph.numberOfOutgoingEdgesWithFromVertex(vertex1));
-        assertEquals(1, graph.numberOfOutgoingEdgesWithFromVertex(vertex2));
+        assertEquals(1, graph.numberOfOutgoingEdgesFromVertex(vertex1));
+        assertEquals(1, graph.numberOfOutgoingEdgesFromVertex(vertex2));
     }
 
     @Test

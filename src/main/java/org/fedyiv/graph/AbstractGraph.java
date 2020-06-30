@@ -1,91 +1,108 @@
 package org.fedyiv.graph;
 
 import java.util.*;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public abstract class AbstractGraph<T> implements Graph<T> {
 
-    protected Set<VertexWrapper<T>> graph = new HashSet<>();
+    protected final ReadWriteLock rwl = new ReentrantReadWriteLock();
+
+    protected final Set<VertexWrapper<T>> graph = new HashSet<>();
 
     protected static class VertexWrapper<T> {
         private final T value;
-        private final Set<VertexWrapper<T>> adjecentVerteces;
+        private final Set<VertexWrapper<T>> adjacentVertices;
 
 
         public VertexWrapper(T value) {
             this.value = value;
-            adjecentVerteces = new HashSet<>();
+            adjacentVertices = new HashSet<>();
         }
 
-        public void addAdjecentVertex(VertexWrapper<T> adjecentVertexWrapper) {
-            adjecentVerteces.add(adjecentVertexWrapper);
+        public void addAdjacentVertex(VertexWrapper<T> adjacentVertexWrapper) {
+            adjacentVertices.add(adjacentVertexWrapper);
         }
 
-        public Set<VertexWrapper<T>> getAdjecentVerteces() {
-            return adjecentVerteces;
+        public Set<VertexWrapper<T>> getAdjacentVertices() {
+            return adjacentVertices;
         }
 
         public T getValue() {
             return value;
         }
 
-        public boolean isAdjecent(VertexWrapper<T> other) {
-            return adjecentVerteces.contains(other);
+        public boolean isAdjacent(VertexWrapper<T> other) {
+            return adjacentVertices.contains(other);
         }
     }
 
     @Override
     public void addVertex(T vertex) {
-        var existingVertexWrapper = getVertexWrapper(vertex);
+        rwl.writeLock().lock();
+        try {
+            var existingVertexWrapper = getVertexWrapper(vertex);
 
-        if (existingVertexWrapper == null) {
-            graph.add(new VertexWrapper<>(vertex));
+            if (existingVertexWrapper == null) {
+                graph.add(new VertexWrapper<>(vertex));
+            }
+        } finally {
+            rwl.writeLock().unlock();
         }
 
     }
 
+    /**
+     * Uses Breadth-first search algorithm to find the shortest path between two vertexes
+     */
     @Override
     public List<T> getPath(T vertex1, T vertex2) {
-        //TODO: Move this to separate class //BFS search
 
-        var vertexWrapper1 = getVertexWrapper(vertex1);
-        var vertexWrapper2 = getVertexWrapper(vertex2);
+        rwl.readLock().lock();
 
-        if (vertexWrapper1 == null || vertexWrapper2 == null)
-            throw new IllegalArgumentException("One  or both of verteces do not exist (" + vertex1 + ", " + vertex2 + ")");
+        try {
+            var vertexWrapper1 = getVertexWrapper(vertex1);
+            var vertexWrapper2 = getVertexWrapper(vertex2);
 
-        Queue<AbstractMap.Entry<VertexWrapper<T>, List<T>>> vertecesToVisitWithFullPathQueue = new LinkedList<>();
-        Set<VertexWrapper<T>> visitedVertices = new HashSet<>();
+            if (vertexWrapper1 == null || vertexWrapper2 == null)
+                throw new IllegalArgumentException("One  or both of verteces do not exist (" + vertex1 + ", " + vertex2 + ")");
 
-        List<T> initialPath = new ArrayList<>();
-        initialPath.add(vertexWrapper1.getValue());
-        vertecesToVisitWithFullPathQueue.add(new AbstractMap.SimpleEntry<>(vertexWrapper1, initialPath));
+            Queue<AbstractMap.Entry<VertexWrapper<T>, List<T>>> vertecesToVisitWithFullPathQueue = new LinkedList<>();
+            Set<VertexWrapper<T>> visitedVertices = new HashSet<>();
+
+            List<T> initialPath = new ArrayList<>();
+            initialPath.add(vertexWrapper1.getValue());
+            vertecesToVisitWithFullPathQueue.add(new AbstractMap.SimpleEntry<>(vertexWrapper1, initialPath));
 
 
-        while (vertecesToVisitWithFullPathQueue.peek() != null) {
+            while (vertecesToVisitWithFullPathQueue.peek() != null) {
 
-            var currentVertexWithPath = vertecesToVisitWithFullPathQueue.remove();
+                var currentVertexWithPath = vertecesToVisitWithFullPathQueue.remove();
 
-            var currentVertex = currentVertexWithPath.getKey();
-            var currentPath = currentVertexWithPath.getValue();
+                var currentVertex = currentVertexWithPath.getKey();
+                var currentPath = currentVertexWithPath.getValue();
 
-            visitedVertices.add(currentVertex);
+                visitedVertices.add(currentVertex);
 
-            if (currentVertex.equals(vertexWrapper2))
-                return currentPath;
+                if (currentVertex.equals(vertexWrapper2))
+                    return currentPath;
 
-            if (currentVertex.equals(vertexWrapper1) && currentPath.size() != 1)
-                continue;
+                if (currentVertex.equals(vertexWrapper1) && currentPath.size() != 1)
+                    continue;
 
-            for (VertexWrapper<T> adjecentVertex : currentVertex.getAdjecentVerteces()) {
-                if (!visitedVertices.contains(adjecentVertex)) {
-                    List<T> newPath = new ArrayList<>(currentPath);
-                    newPath.add(adjecentVertex.getValue());
-                    vertecesToVisitWithFullPathQueue.add(new AbstractMap.SimpleEntry<>(adjecentVertex, newPath));
+                for (VertexWrapper<T> adjacentVertex : currentVertex.getAdjacentVertices()) {
+                    if (!visitedVertices.contains(adjacentVertex)) {
+                        List<T> newPath = new ArrayList<>(currentPath);
+                        newPath.add(adjacentVertex.getValue());
+                        vertecesToVisitWithFullPathQueue.add(new AbstractMap.SimpleEntry<>(adjacentVertex, newPath));
+                    }
                 }
             }
-        }
 
-        return null;
+            return null;
+        } finally {
+            rwl.readLock().unlock();
+        }
     }
 
     protected VertexWrapper<T> getVertexWrapper(T vertex) {
@@ -108,33 +125,52 @@ public abstract class AbstractGraph<T> implements Graph<T> {
 
     @Override
     public boolean containsVertex(T vertex) {
-        return getVertexWrapper(vertex) != null;
+        rwl.readLock().lock();
+        try {
+            return getVertexWrapper(vertex) != null;
+        } finally {
+            rwl.readLock().unlock();
+        }
     }
 
     @Override
     public boolean containsEdge(T vertex1, T vertex2) {
+        rwl.readLock().lock();
+        try {
 
-        var vertexWrapper1 = getVertexWrapper(vertex1);
-        var vertexWrapper2 = getVertexWrapper(vertex2);
-        if (vertexWrapper1 == null || vertexWrapper2 == null)
-            return false;
-        return vertexWrapper1.isAdjecent(vertexWrapper2);
-
+            var vertexWrapper1 = getVertexWrapper(vertex1);
+            var vertexWrapper2 = getVertexWrapper(vertex2);
+            if (vertexWrapper1 == null || vertexWrapper2 == null)
+                return false;
+            return vertexWrapper1.isAdjacent(vertexWrapper2);
+        } finally {
+            rwl.readLock().unlock();
+        }
     }
 
     @Override
     public int numberOfVertices() {
-        return graph.size();
+        rwl.readLock().lock();
+        try {
+            return graph.size();
+        } finally {
+            rwl.readLock().unlock();
+        }
     }
 
     @Override
-    public int numberOfOutgoingEdgesWithFromVertex(T vertex) {
+    public int numberOfOutgoingEdgesFromVertex(T vertex) {
+        rwl.readLock().lock();
+        try {
 
-        var vertexWrapper = getVertexWrapper(vertex);
-        if (vertexWrapper == null)
-            throw new IllegalArgumentException("No edge " + vertex);
+            var vertexWrapper = getVertexWrapper(vertex);
+            if (vertexWrapper == null)
+                throw new IllegalArgumentException("No edge " + vertex);
 
-        return vertexWrapper.getAdjecentVerteces().size();
+            return vertexWrapper.getAdjacentVertices().size();
+        } finally {
+            rwl.readLock().unlock();
+        }
 
     }
 

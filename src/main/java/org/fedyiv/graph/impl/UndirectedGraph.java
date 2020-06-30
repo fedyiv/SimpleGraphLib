@@ -11,8 +11,8 @@ public class UndirectedGraph<T> extends AbstractGraph<T> {
         var vertexWrapper1 = getOrCreateVertexWrapper(vertex1);
         var vertexWrapper2 = getOrCreateVertexWrapper(vertex2);
 
-        vertexWrapper1.addAdjecentVertex(vertexWrapper2);
-        vertexWrapper2.addAdjecentVertex(vertexWrapper1);
+        vertexWrapper1.addAdjacentVertex(vertexWrapper2);
+        vertexWrapper2.addAdjacentVertex(vertexWrapper1);
     }
 
 }
