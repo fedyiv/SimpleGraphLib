@@ -7,8 +7,9 @@ Should support 2 types of graphs - directed and undirected with 3 operations:
 Vertices should be of a user defined type.
 
 ## Implemented optional requirements
-·  Make you graphs thread safe.
+-  Make you graphs thread safe.
+-  Add traverse function that will take a user defined function and apply it on every vertex of the graph.
 
 ## Not implemented optional requirements
-·  Add weighted edges support in your lib. 
-·  Add traverse function that will take a user defined function and apply it on every vertex of the graph.
+-  Add weighted edges support in your lib. 
+

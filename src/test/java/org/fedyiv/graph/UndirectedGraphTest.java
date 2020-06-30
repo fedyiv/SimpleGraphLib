@@ -241,4 +241,33 @@ class UndirectedGraphTest {
 
     }
 
+    @Test
+    public void testTraverse() {
+
+        /*
+         *   1 - 2 -  3
+         * */
+        Graph<Integer> graph = new UndirectedGraph<>();
+
+        final Integer vertex1 = 1;
+        final Integer vertex2 = 2;
+        final Integer vertex3 = 3;
+
+        final Integer vertex1transformed = 2;
+        final Integer vertex2transformed = 4;
+        final Integer vertex3transformed = 6;
+
+
+        final List<Integer> expectedPath1 = List.of(vertex1transformed, vertex2transformed, vertex3transformed);
+
+        graph.addEdge(vertex1, vertex2);
+        graph.addEdge(vertex2, vertex3);
+
+        graph.traverse(vertex -> vertex * 2);
+
+
+        assertEquals(expectedPath1, graph.getPath(vertex1transformed, vertex3transformed));
+
+    }
+
 }

@@ -3,6 +3,7 @@ package org.fedyiv.graph;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Function;
 
 public abstract class AbstractGraph<T> implements Graph<T> {
 
@@ -11,7 +12,7 @@ public abstract class AbstractGraph<T> implements Graph<T> {
     protected final Set<VertexWrapper<T>> graph = new HashSet<>();
 
     protected static class VertexWrapper<T> {
-        private final T value;
+        private T value;
         private final Set<VertexWrapper<T>> adjacentVertices;
 
 
@@ -30,6 +31,10 @@ public abstract class AbstractGraph<T> implements Graph<T> {
 
         public T getValue() {
             return value;
+        }
+
+        public void setValue(T value) {
+            this.value = value;
         }
 
         public boolean isAdjacent(VertexWrapper<T> other) {
@@ -168,6 +173,20 @@ public abstract class AbstractGraph<T> implements Graph<T> {
                 throw new IllegalArgumentException("No edge " + vertex);
 
             return vertexWrapper.getAdjacentVertices().size();
+        } finally {
+            rwl.readLock().unlock();
+        }
+
+    }
+
+    public void traverse(Function<T, T> func) {
+        rwl.readLock().lock();
+        try {
+            for (VertexWrapper<T> vertexWrapper : graph) {
+                T initialValue = vertexWrapper.getValue();
+                var changedValue = func.apply(initialValue);
+                vertexWrapper.setValue(changedValue);
+            }
         } finally {
             rwl.readLock().unlock();
         }

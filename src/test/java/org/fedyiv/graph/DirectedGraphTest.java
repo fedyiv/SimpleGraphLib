@@ -1,6 +1,7 @@
 package org.fedyiv.graph;
 
 import org.fedyiv.graph.impl.DirectedGraph;
+import org.fedyiv.graph.impl.UndirectedGraph;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -265,6 +266,35 @@ class DirectedGraphTest {
 
         assertEquals(5, graph.getPath(vertex1, vertex9).size());
         assertNull(graph.getPath(vertex9, vertex1));
+
+    }
+
+    @Test
+    public void testTraverse() {
+
+        /*
+         *   1 -> 2 ->  3
+         * */
+        Graph<Integer> graph = new UndirectedGraph<>();
+
+        final Integer vertex1 = 1;
+        final Integer vertex2 = 2;
+        final Integer vertex3 = 3;
+
+        final Integer vertex1transformed = 2;
+        final Integer vertex2transformed = 4;
+        final Integer vertex3transformed = 6;
+
+
+        final List<Integer> expectedPath1 = List.of(vertex1transformed, vertex2transformed, vertex3transformed);
+
+        graph.addEdge(vertex1, vertex2);
+        graph.addEdge(vertex2, vertex3);
+
+        graph.traverse(vertex -> vertex * 2);
+
+
+        assertEquals(expectedPath1, graph.getPath(vertex1transformed, vertex3transformed));
 
     }
 
